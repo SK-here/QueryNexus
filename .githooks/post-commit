@@ -1,0 +1,16 @@
+#!/bin/sh
+# Push the current branch after every local commit so GitHub stays in sync.
+
+if [ -d "$(git rev-parse --git-path rebase-merge)" ] ||
+   [ -d "$(git rev-parse --git-path rebase-apply)" ] ||
+   [ -f "$(git rev-parse --git-path MERGE_HEAD)" ] ||
+   [ -f "$(git rev-parse --git-path CHERRY_PICK_HEAD)" ]; then
+  exit 0
+fi
+
+remote=$(git remote 2>/dev/null | head -n1)
+[ -z "$remote" ] && exit 0
+
+branch=$(git symbolic-ref --quiet --short HEAD) || exit 0
+
+git push -u "$remote" "$branch"
