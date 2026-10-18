@@ -127,3 +127,7 @@ pytest -q
 - Defaults to **read-only** SQL. Pass `--allow-writes` only when you intend mutations.
 - Prefer env vars or a secrets manager over putting passwords in shell history.
 - The agent can still generate incorrect SQL; review queries in production workflows, especially with writes enabled.
+
+## License
+
+QueryNexus is dual-licensed under the [MIT License](LICENSE-MIT) and the [GNU GPLv3](LICENSE-GPL3) (or later). You may choose either. See [LICENSE](LICENSE) for the dual-license terms.
