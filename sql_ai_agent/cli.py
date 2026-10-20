@@ -104,6 +104,18 @@ def ask(
     sql_password: Optional[str] = typer.Option(
         None, "--sql-password", envvar="SQL_PASSWORD", help="Database password"
     ),
+    provider: Optional[str] = typer.Option(
+        None, "--provider", envvar="LLM_PROVIDER", help="LLM provider: openai, gemini, groq, deepseek, ollama, anthropic, openrouter, mistral"
+    ),
+    model: Optional[str] = typer.Option(
+        None, "--model", envvar="LLM_MODEL", help="LLM model name"
+    ),
+    api_key: Optional[str] = typer.Option(
+        None, "--api-key", envvar="LLM_API_KEY", help="LLM API key"
+    ),
+    base_url: Optional[str] = typer.Option(
+        None, "--base-url", envvar="LLM_BASE_URL", help="Custom LLM API base URL"
+    ),
     allow_writes: bool = typer.Option(
         False, "--allow-writes", help="Permit INSERT/UPDATE/DELETE/DDL"
     ),
@@ -115,11 +127,25 @@ def ask(
 ) -> None:
     """Ask one question and print SQL + results."""
     url, user, password = _resolve_credentials(sql_url, sql_user, sql_password)
+    settings = get_settings()
+    if provider or model or api_key or base_url:
+        settings = Settings(
+            llm_provider=provider or settings.llm_provider,
+            llm_model=model or settings.llm_model,
+            llm_api_key=api_key or settings.llm_api_key,
+            llm_base_url=base_url or settings.llm_base_url,
+            sql_url=url,
+            sql_user=user,
+            sql_password=password,
+            allow_writes=allow_writes,
+            max_rows=max_rows,
+        )
     try:
         with SQLAIAgent(
             url,
             user,
             password,
+            settings=settings,
             allow_writes=allow_writes,
             max_rows=max_rows,
         ) as agent:
@@ -157,21 +183,51 @@ def chat(
     sql_password: Optional[str] = typer.Option(
         None, "--sql-password", envvar="SQL_PASSWORD"
     ),
+    provider: Optional[str] = typer.Option(
+        None, "--provider", envvar="LLM_PROVIDER", help="LLM provider: openai, gemini, groq, deepseek, ollama, anthropic, openrouter, mistral"
+    ),
+    model: Optional[str] = typer.Option(
+        None, "--model", envvar="LLM_MODEL", help="LLM model name"
+    ),
+    api_key: Optional[str] = typer.Option(
+        None, "--api-key", envvar="LLM_API_KEY", help="LLM API key"
+    ),
+    base_url: Optional[str] = typer.Option(
+        None, "--base-url", envvar="LLM_BASE_URL", help="Custom LLM API base URL"
+    ),
     allow_writes: bool = typer.Option(False, "--allow-writes"),
     max_rows: int = typer.Option(100, "--max-rows"),
 ) -> None:
     """Interactive REPL. Type questions; use /schema, /quit to control the session."""
     url, user, password = _resolve_credentials(sql_url, sql_user, sql_password)
+    settings = get_settings()
+    if provider or model or api_key or base_url:
+        settings = Settings(
+            llm_provider=provider or settings.llm_provider,
+            llm_model=model or settings.llm_model,
+            llm_api_key=api_key or settings.llm_api_key,
+            llm_base_url=base_url or settings.llm_base_url,
+            sql_url=url,
+            sql_user=user,
+            sql_password=password,
+            allow_writes=allow_writes,
+            max_rows=max_rows,
+        )
     console.print(
         Panel(
-            "SQL AI Agent ready. Type a question, or /schema /quit",
+            f"SQL AI Agent ready ({settings.llm_provider} / {settings.llm_model or 'default'}). Type a question, or /schema /quit",
             title="chat",
             border_style="green",
         )
     )
     try:
         with SQLAIAgent(
-            url, user, password, allow_writes=allow_writes, max_rows=max_rows
+            url,
+            user,
+            password,
+            settings=settings,
+            allow_writes=allow_writes,
+            max_rows=max_rows,
         ) as agent:
             while True:
                 try:
@@ -192,6 +248,24 @@ def chat(
     except Exception as exc:  # noqa: BLE001
         console.print(f"[red]Fatal:[/red] {exc}")
         raise typer.Exit(code=1) from exc
+
+
+@app.command()
+def web(
+    host: str = typer.Option("127.0.0.1", "--host", help="Host address"),
+    port: int = typer.Option(8000, "--port", help="Port number"),
+) -> None:
+    """Launch the QueryNexus Web UI in your browser."""
+    import uvicorn
+    console.print(
+        Panel(
+            f"QueryNexus Web Studio running at [bold cyan]http://{host}:{port}[/bold cyan]\n"
+            "Press [bold red]Ctrl+C[/bold red] to stop.",
+            title="Web UI",
+            border_style="green",
+        )
+    )
+    uvicorn.run("web_app:app", host=host, port=port, reload=False)
 
 
 def main() -> None:

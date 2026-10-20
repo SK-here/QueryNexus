@@ -35,6 +35,7 @@ class AgentResponse:
     error_type: str | None = None
     clarification: str | None = None
     message: str | None = None
+    general_answer: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -50,6 +51,7 @@ class AgentResponse:
             "error_type": self.error_type,
             "clarification": self.clarification,
             "message": self.message,
+            "general_answer": self.general_answer,
         }
 
 
@@ -98,10 +100,16 @@ class SQLAIAgent:
             query_timeout_seconds=self.settings.query_timeout_seconds,
             max_rows=self.max_rows,
         )
+        provider = getattr(self.settings, "llm_provider", "openai")
+        effective_key = self.settings.get_effective_api_key(provider)
+        effective_model = self.settings.get_effective_model(provider) or None
+        effective_base_url = self.settings.get_effective_base_url(provider) or None
+
         self.llm = llm or LLMClient(
-            api_key=self.settings.openai_api_key,
-            model=self.settings.openai_model,
-            base_url=self.settings.openai_base_url,
+            api_key=effective_key,
+            provider=provider,
+            model=effective_model,
+            base_url=effective_base_url,
         )
         self._connected = False
 
@@ -128,6 +136,7 @@ class SQLAIAgent:
         *,
         execute: bool = True,
         raise_on_empty: bool = False,
+        allow_general: bool = False,
     ) -> AgentResponse:
         """
         Convert *question* to SQL, optionally execute it, and return results.
@@ -181,6 +190,18 @@ class SQLAIAgent:
 
                 clarification = self.llm.parse_ambiguity(raw)
                 if clarification:
+                    if allow_general:
+                        answer = self.llm.generate_general_answer(question)
+                        return AgentResponse(
+                            success=True,
+                            question=question,
+                            general_answer=answer,
+                            message=(
+                                "Answered from the model's general knowledge — "
+                                "this question could not be answered from the connected database."
+                            ),
+                            retries_used=retries_used,
+                        )
                     return AgentResponse(
                         success=False,
                         question=question,
