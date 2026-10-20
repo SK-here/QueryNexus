@@ -30,6 +30,16 @@ cp .env.example .env
 ```bash
 python scripts/seed_demo_db.py
 
+# Launch the Web Studio UI
+python main.py web
+# or: python web_app.py
+```
+
+Open your browser at `http://localhost:8000`.
+
+CLI one-shot mode:
+
+```bash
 python main.py ask "total paid revenue by country" \
   --sql-url "sqlite:///./demo.db" \
   --sql-user demo \

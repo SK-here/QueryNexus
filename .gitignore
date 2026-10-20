@@ -1,16 +1,20 @@
-.env
-.env.*
-!.env.example
+# Virtual env
 .venv/
 venv/
+
+# Logs and transient artifacts
+server.log
+querynexus_web.log
+served.html
+*.log
+
+# Screenshots from chat sessions
+screenshots/
+
+# Tooling state
+.freebuff/
 __pycache__/
-*.py[cod]
-*$py.class
-*.egg-info/
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-dist/
-build/
-*.db
-.DS_Store
+*.pyc
+
+# Local secrets
+.env
