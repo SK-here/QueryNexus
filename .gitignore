@@ -1,6 +1,8 @@
 # Virtual env
 .venv/
 venv/
+.vscode
+demo.db
 
 # Logs and transient artifacts
 server.log
