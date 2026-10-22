@@ -1,0 +1,14 @@
+services:
+  querynexus:
+    build: .
+    container_name: querynexus-app
+    ports:
+      - "8000:8000"
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - SQL_URL=sqlite:///./demo.db
+      - SQL_USER=demo
+      - SQL_PASSWORD=
+    command: >
+      sh -c "python scripts/seed_demo_db.py && python main.py web --host 0.0.0.0"
+    restart: unless-stopped
