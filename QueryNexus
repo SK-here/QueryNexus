@@ -1,0 +1,18 @@
+#!/bin/bash
+set -e
+
+# Prompt for Groq API key on the host if not already exported in your shell
+if [ -z "$GROQ_API_KEY" ]; then
+    read -p "Enter your Groq API Key: " GROQ_API_KEY
+    export GROQ_API_KEY
+fi
+
+echo "Stopping and removing any old container instances..."
+docker compose down --remove-orphans || true
+
+echo "Building a fresh Docker image and starting a single container instance..."
+docker compose up --build --force-recreate -d
+
+echo ""
+echo "QueryNexus is running!"
+echo "Access the Web Studio UI at: http://localhost:8000"
